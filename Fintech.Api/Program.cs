@@ -7,6 +7,9 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Fintech.Api.Services;
 using Fintech.Api.Services.Transactions;
+using Fintech.Api.Services.Auth;
+using Fintech.Api.Middleware;
+using Fintech.Api.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,7 +71,7 @@ builder.Services.AddAuthentication(options =>{
         };
     });
 
-builder.Services.AddSingleton<HashSet<string>>();
+builder.Services.AddSingleton<HashSet<RevokedToken>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -76,8 +79,11 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITransactionStrategy, TransferStrategy>();
 builder.Services.AddScoped<ITransactionStrategy, WithdrawalStrategy>();
 builder.Services.AddScoped<ITransactionStrategy, DepositStrategy>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddControllers();
+
+builder.Services.AddHostedService<TokenCleanupWorker>();
 
 var app = builder.Build();
 
@@ -89,6 +95,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<TokenBlacklistMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

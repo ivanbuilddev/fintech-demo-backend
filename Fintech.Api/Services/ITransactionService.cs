@@ -1,3 +1,4 @@
+using Fintech.Api.DTOs;
 using Fintech.Api.Models;
 
 namespace Fintech.Api.Services
@@ -6,6 +7,6 @@ namespace Fintech.Api.Services
     {
         public Task<Transaction?> GetTransactionByIdAsync(Guid id);
         public Task<IEnumerable<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId);
-        public Task<Transaction?> CreateTransactionAsync(Transaction transaction);
+        public Task<Transaction?> CreateTransactionAsync(CreateTransationRequest transaction);  
     }
 }

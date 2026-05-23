@@ -9,7 +9,7 @@ namespace Fintech.Api.Models
         public Guid Id { get; set; }
         public Guid? SourceAccountId { get; set; }
         public Guid? DestinationAccountId { get; set; }
-        public string TransactionDescription { get; set; } = "New Transaction";
+        public string Description { get; set; } = "New Transaction";
         public string Category { get; set; } = "General";
         [Required]
         [Column(TypeName = "decimal(18,4)")]

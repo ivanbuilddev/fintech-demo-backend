@@ -1,4 +1,5 @@
 using Fintech.Api.Data;
+using Fintech.Api.DTOs;
 using Fintech.Api.Models;
 using Fintech.Api.Services.Transactions;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ namespace Fintech.Api.Services
             return await _dbContext.Transactions.Where(t => t.SourceAccountId == accountId || t.DestinationAccountId == accountId).ToListAsync();
         }
 
-        public async Task<Transaction?> CreateTransactionAsync(Transaction transaction)
+        public async Task<Transaction?> CreateTransactionAsync(CreateTransationRequest transaction)
         {
             if(!_strategies.TryGetValue(transaction.Type.ToString(), out var strategy))
             {

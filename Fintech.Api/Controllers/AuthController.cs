@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Fintech.Api.Services;
-using Fintech.Api.Models;
+using Fintech.Api.DTOs;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Fintech.Api.Controllers
@@ -21,7 +21,7 @@ namespace Fintech.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] string request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _authService.LoginAsync(request);
             if(user == null)
@@ -32,9 +32,19 @@ namespace Fintech.Api.Controllers
         }
         
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] string token)
+        public async Task<IActionResult> Logout()
         {
-            var result = await _authService.LogoutAsync(token);
+            var token = HttpContext.Request.Headers["Authorization"]
+                .ToString()
+                .Replace("Bearer ", "");
+            var expireClaim = User.FindFirst("exp")?.Value;
+            var expDate = DateTime.Now;
+            if (long.TryParse(expireClaim, out long expUnix))
+            {
+                expDate = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+            }
+            LogoutRequest request = new LogoutRequest { Token = token, ExpireDate = expDate };
+            var result = await _authService.LogoutAsync(request);
             if(!result)
             {
                 return Unauthorized(new { message = "Invalid token" });

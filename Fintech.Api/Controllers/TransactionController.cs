@@ -1,8 +1,9 @@
+using Fintech.Api.DTOs;
 using Fintech.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fintech.Api.Models
+namespace Fintech.Api.Controllers
 {
     [Authorize]
     [ApiController]
@@ -41,7 +42,7 @@ namespace Fintech.Api.Models
         }
 
         [HttpPost("transactions")]
-        public async Task<IActionResult> CreateTransaction([FromBody] Transaction transaction)
+        public async Task<IActionResult> CreateTransaction([FromBody] CreateTransationRequest transaction)
         {
             var transactionCreated = await _transactionService.CreateTransactionAsync(transaction);
             if(transactionCreated == null)

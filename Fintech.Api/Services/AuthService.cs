@@ -15,72 +15,38 @@ namespace Fintech.Api.Services
         private readonly ILogger<AuthService> _logger;
         private readonly HashSet<string> _blacklist;
         private readonly IConfiguration _configuration;
+        private readonly ITokenService _tokenService;
 
-        public AuthService(AppDbContext dbContext, ILogger<AuthService> logger, HashSet<string> blacklist, IConfiguration configuration)
+        public AuthService(AppDbContext dbContext, ILogger<AuthService> logger, HashSet<string> blacklist, IConfiguration configuration, ITokenService tokenService)
         {
             _dbContext = dbContext;
             _logger = logger;
             _blacklist = blacklist;
             _configuration = configuration;
+            _tokenService = tokenService;
         }
-        public async Task<LoginResponse?> LoginAsync(string username)
+        public async Task<LoginResponse?> LoginAsync(LoginRequest request)
         {
-            _logger.LogInformation("User {username} trying to login...", username);
+            _logger.LogInformation("User {username} trying to login...", request.Username);
 
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == request.Username.ToLower());
 
             if (user == null)
             {
-                _logger.LogError("User {username} not found.", username);
+                _logger.LogError("User {username} not found.", request.Username);
                 return null;
             }
 
-            _logger.LogInformation("User {username} logged in.", username);
+            _logger.LogInformation("User {username} logged in.", request.Username);
 
-            return new LoginResponse { User = user, Token = GenerateToken(user) };
+            return new LoginResponse { User = user, Token = await _tokenService.GenerateTokenAsync(user) };
         }
 
-        public async Task<bool> LogoutAsync(string token)
+        public async Task<bool> LogoutAsync(LogoutRequest request)
         {
-            lock (_blacklist)
-            {
-                _blacklist.Add(token);
-            }
-            _logger.LogInformation("Token {token} revoked.", token);
+            await _tokenService.RevokeTokenAsync(request.Token);
+            _logger.LogInformation("Token {token} revoked.", request.Token);
             return true;
-        }
-
-        public async Task<bool> IsTokenRevokedAsync(string token)
-        {
-            lock (_blacklist)
-            {
-                return _blacklist.Contains(token);
-            }
-        }
-
-        private string GenerateToken(User user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username)
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(1),
-                SigningCredentials = creds,
-                Audience = _configuration["JwtSettings:Audience"],
-                Issuer = _configuration["JwtSettings:Issuer"]
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);  
         }
     }
 }

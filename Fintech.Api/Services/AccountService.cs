@@ -1,4 +1,5 @@
 using Fintech.Api.Data;
+using Fintech.Api.DTOs;
 using Fintech.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,27 +35,37 @@ namespace Fintech.Api.Services
             return await _dbContext.Accounts.Where(a => a.UserId == userId).ToListAsync();
         }
 
-        public async Task<Account> CreateAccountAsync(Account account)
+        public async Task<Account> CreateAccountAsync(CreateAccountRequest request)
         {
             _logger.LogInformation("Trying to create account.");
-            var accountCreated = await _dbContext.Accounts.AddAsync(account);
+            var newAccount = new Account
+            {
+                Name = request.Name,
+                UserId = request.UserId,
+                Currency = request.Currency,
+                Balance = 0
+            };
+            var accountCreated = await _dbContext.Accounts.AddAsync(newAccount);
             _dbContext.SaveChanges();
             _logger.LogInformation("Account with id {id} created.", accountCreated.Entity.Id);
             return accountCreated.Entity;
         }
 
-        public async Task<Account?> UpdateAccountAsync(Account account)
+        public async Task<Account?> UpdateAccountAsync(Guid id, UpdateAccountRequest request)
         {
-            _logger.LogInformation("Account {id} requested to be updated.", account.Id);
-            var accountToUpdate = await GetAccountByIdAsync(account.Id);
+            _logger.LogInformation("Account {id} requested to be updated.", id);
+            var accountToUpdate = await GetAccountByIdAsync(id);
             if(accountToUpdate == null)
             {
-                _logger.LogError("Account {id} not found.", account.Id);
+                _logger.LogError("Account {id} not found.", id);
                 return null;
             }
-            accountToUpdate = account;
+            if(request.Balance != null) accountToUpdate.Balance = request.Balance.Value;
+            if(request.Name != null) accountToUpdate.Name = request.Name;
+            if(request.IsActive != null) accountToUpdate.IsActive = request.IsActive.Value;
+
             _dbContext.SaveChanges();
-            _logger.LogInformation("Account {id} updated.", account.Id);
+            _logger.LogInformation("Account {id} updated.", id);
             return accountToUpdate;
         }
     }

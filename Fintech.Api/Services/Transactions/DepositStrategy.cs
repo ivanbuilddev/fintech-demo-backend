@@ -1,4 +1,5 @@
 using Fintech.Api.Data;
+using Fintech.Api.DTOs;
 using Fintech.Api.Models;
 
 namespace Fintech.Api.Services.Transactions
@@ -15,7 +16,7 @@ namespace Fintech.Api.Services.Transactions
             _dbContext = dbContext;
             _logger = logger;
         }
-        public async Task<Transaction?> CreateTransactionAsync(Transaction transaction)
+        public async Task<Transaction?> CreateTransactionAsync(CreateTransationRequest transaction)
         {
             _logger.LogInformation("Deposit transaction requested.");
             Guid? accountId = transaction.DestinationAccountId;
@@ -28,11 +29,19 @@ namespace Fintech.Api.Services.Transactions
                 return null;
             }
             account!.Balance += transaction.Amount;
-            await _accountService.UpdateAccountAsync(account);
-            _dbContext.Transactions.Add(transaction);
+            
+            var newTransaction = new Transaction
+            {
+                DestinationAccountId = accountId.Value,
+                Amount = transaction.Amount,
+                Description = transaction.Description,
+                Type = transaction.Type
+            };
+
+            _dbContext.Transactions.Add(newTransaction);
             await _dbContext.SaveChangesAsync();
             _logger.LogInformation("Deposit transaction created and account balance updated.");
-            return transaction;
+            return newTransaction;
         }
     }
 }
