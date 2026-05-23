@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>fintech_backend</RootNamespace>
+    <UserSecretsId>2d14a0dd-d974-4b4b-b3e6-e1b796d34288</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
