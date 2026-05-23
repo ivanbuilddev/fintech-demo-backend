@@ -1,7 +1,7 @@
-using fintech_backend.Models;
+using Fintech.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace fintech_backend.Data
+namespace Fintech.Api.Data
 {
     public class AppDbContext : DbContext
     {

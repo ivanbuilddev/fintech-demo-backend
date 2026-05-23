@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace fintech_backend.Models
+namespace Fintech.Api.Models
 {
     public class User
     {

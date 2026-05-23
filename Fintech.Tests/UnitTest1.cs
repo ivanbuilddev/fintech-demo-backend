@@ -1,4 +1,4 @@
-﻿namespace fintech.Tests;
+﻿namespace Fintech.Tests;
 
 public class UnitTest1
 {

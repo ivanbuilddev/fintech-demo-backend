@@ -1,6 +1,6 @@
 using Serilog;
 using Serilog.Formatting.Compact;
-using fintech_backend.Data;
+using Fintech.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,5 +30,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();

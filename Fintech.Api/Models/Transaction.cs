@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace fintech_backend.Models
+namespace Fintech.Api.Models
 {
     public class Transaction
     {
