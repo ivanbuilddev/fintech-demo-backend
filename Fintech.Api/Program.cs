@@ -2,6 +2,9 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using Fintech.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,8 +21,54 @@ builder.Host.UseSerilog();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var _configuration = builder.Configuration;
+
+var connectionString = _configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
+
+var jwtSettings = _configuration["JwtSettings:Secret"];
+var key = Encoding.UTF8.GetBytes(jwtSettings!);
+
+builder.Services.AddAuthentication(options =>{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = _configuration["JwtSettings:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = _configuration["JwtSettings:Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var rawToken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "").Trim();
+                var blacklist = context.HttpContext.RequestServices.GetRequiredService<HashSet<string>>();
+
+                if (blacklist.Contains(rawToken))
+                {
+                    context.Fail("This token has been revoked.");
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddSingleton<HashSet<string>>();
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -30,7 +79,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
