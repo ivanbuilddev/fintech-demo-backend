@@ -1,0 +1,1 @@
+Demo project to showcase a functional backend for a Fintech application.
