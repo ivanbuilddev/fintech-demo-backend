@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Fintech.Api.Services;
+using Fintech.Api.Services.Transactions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +69,13 @@ builder.Services.AddAuthentication(options =>{
     });
 
 builder.Services.AddSingleton<HashSet<string>>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ITransactionStrategy, TransferStrategy>();
+builder.Services.AddScoped<ITransactionStrategy, WithdrawalStrategy>();
+builder.Services.AddScoped<ITransactionStrategy, DepositStrategy>();
 
 builder.Services.AddControllers();
 

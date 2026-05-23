@@ -19,7 +19,7 @@ namespace Fintech.Api.Services
             _accountService = accountService;
             _strategies = strategies.ToDictionary(s => s.Type.ToString(), s => s);
         }
-        public async Task<Transaction?> GetTransactionAsync(Guid id)
+        public async Task<Transaction?> GetTransactionByIdAsync(Guid id)
         {
             _logger.LogInformation("Transaction {id} requested.", id);
             var transaction = await _dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == id);
@@ -32,7 +32,7 @@ namespace Fintech.Api.Services
             return transaction;
         }
 
-        public async Task<IEnumerable<Transaction>> GetTransactionsAsync(Guid accountId)
+        public async Task<IEnumerable<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId)
         {
             _logger.LogInformation("Transactions requested for account {accountId}.", accountId);
             return await _dbContext.Transactions.Where(t => t.SourceAccountId == accountId || t.DestinationAccountId == accountId).ToListAsync();

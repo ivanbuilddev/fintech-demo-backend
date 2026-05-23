@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Fintech.Api.Services;
 using Fintech.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Fintech.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
@@ -17,6 +19,7 @@ namespace Fintech.Api.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] string request)
         {
