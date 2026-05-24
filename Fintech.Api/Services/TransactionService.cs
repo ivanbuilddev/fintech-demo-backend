@@ -10,14 +10,12 @@ namespace Fintech.Api.Services
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<TransactionService> _logger;
-        private readonly IAccountService _accountService;
         private readonly Dictionary<string, ITransactionStrategy> _strategies;
 
-        public TransactionService(AppDbContext dbContext, ILogger<TransactionService> logger, IAccountService accountService, IEnumerable<ITransactionStrategy> strategies)
+        public TransactionService(AppDbContext dbContext, ILogger<TransactionService> logger, IEnumerable<ITransactionStrategy> strategies)
         {
             _dbContext = dbContext;
             _logger = logger;
-            _accountService = accountService;
             _strategies = strategies.ToDictionary(s => s.Type.ToString(), s => s);
         }
         public async Task<Transaction?> GetTransactionByIdAsync(Guid id)

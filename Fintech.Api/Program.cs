@@ -10,6 +10,7 @@ using Fintech.Api.Services.Transactions;
 using Fintech.Api.Services.Auth;
 using Fintech.Api.Middleware;
 using Fintech.Api.Workers;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,9 +60,9 @@ builder.Services.AddAuthentication(options =>{
             OnTokenValidated = context =>
             {
                 var rawToken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "").Trim();
-                var blacklist = context.HttpContext.RequestServices.GetRequiredService<HashSet<string>>();
+                var blacklist = context.HttpContext.RequestServices.GetRequiredService<HashSet<RevokedToken>>();
 
-                if (blacklist.Contains(rawToken))
+                if (blacklist.FirstOrDefault(item => item.Token == rawToken) != null)
                 {
                     context.Fail("This token has been revoked.");
                 }
@@ -91,6 +92,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();

@@ -39,7 +39,7 @@ namespace Fintech.Api.Data
 
             #region Portfolio Demo Data Seeding
 
-            var adminUserId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+            var adminUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
             var aliceUserId = Guid.Parse("a1111111-1111-1111-1111-111111111111");
             var bobUserId = Guid.Parse("b2222222-2222-2222-2222-222222222222");
             
