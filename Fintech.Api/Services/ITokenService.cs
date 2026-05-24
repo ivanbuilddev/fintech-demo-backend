@@ -7,5 +7,6 @@ namespace Fintech.Api.Services
         public Task RevokeTokenAsync(string token);
         public Task<string> GenerateTokenAsync(User user);
         public Task CleanUpTokenAsync();
+        public Task<bool> IsTokenRevoked(string token);
     }
 }

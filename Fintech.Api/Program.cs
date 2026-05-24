@@ -71,6 +71,7 @@ builder.Services.AddAuthentication(options =>{
         };
     });
 
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton<HashSet<RevokedToken>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -79,7 +80,6 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITransactionStrategy, TransferStrategy>();
 builder.Services.AddScoped<ITransactionStrategy, WithdrawalStrategy>();
 builder.Services.AddScoped<ITransactionStrategy, DepositStrategy>();
-builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddControllers();
 

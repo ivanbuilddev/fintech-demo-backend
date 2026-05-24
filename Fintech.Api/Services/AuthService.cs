@@ -1,11 +1,7 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Fintech.Api.Data;
 using Fintech.Api.DTOs;
-using Fintech.Api.Models;
+using Fintech.Api.Services.Auth;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Fintech.Api.Services
 {
@@ -13,16 +9,12 @@ namespace Fintech.Api.Services
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<AuthService> _logger;
-        private readonly HashSet<string> _blacklist;
-        private readonly IConfiguration _configuration;
         private readonly ITokenService _tokenService;
 
-        public AuthService(AppDbContext dbContext, ILogger<AuthService> logger, HashSet<string> blacklist, IConfiguration configuration, ITokenService tokenService)
+        public AuthService(AppDbContext dbContext, ILogger<AuthService> logger, ITokenService tokenService)
         {
             _dbContext = dbContext;
             _logger = logger;
-            _blacklist = blacklist;
-            _configuration = configuration;
             _tokenService = tokenService;
         }
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)

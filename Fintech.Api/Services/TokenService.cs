@@ -67,5 +67,17 @@ namespace Fintech.Api.Services
                 _blacklist.RemoveWhere(item => item.RevokedAt < now);
             }
         }
+
+        public async Task<bool> IsTokenRevoked(string token)
+        {
+            var revoked = _blacklist.FirstOrDefault(item => item.Token == token);
+
+            if (revoked == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }  
 }
