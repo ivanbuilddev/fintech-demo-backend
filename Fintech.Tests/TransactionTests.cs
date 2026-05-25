@@ -3,18 +3,22 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Fintech.Api.DTOs;
 using Fintech.Api.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Xunit.Abstractions;
+using Fintech.Api.Services;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fintech.Tests;
 
 public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
 
     public TransactionTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
+        _factory = factory;
     }
 
     [Fact]
@@ -284,5 +288,32 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTransfer_ShouldReturn409_WhenConcurrencyConflict()
+    {
+
+        var mockService = new Mock<ITransactionService>();
+        mockService
+            .Setup(s => s.CreateTransactionAsync(It.IsAny<CreateTransactionRequest>(), It.IsAny<Guid>()))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+
+        var mockClient = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.AddScoped<ITransactionService>(_ => mockService.Object);
+            });
+        }).CreateClient();
+
+        var loginResponse = await TestHelper.Login(mockClient);
+
+        mockClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        mockClient.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKeyConflictKey");
+        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Withdrawal };
+        var response = await mockClient.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 }
