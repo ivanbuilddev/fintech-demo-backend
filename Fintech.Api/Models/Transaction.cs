@@ -8,6 +8,11 @@ public class Transaction
     public Guid Id { get; set; }
     public Guid? SourceAccountId { get; set; }
     public Guid? DestinationAccountId { get; set; }
+    [Required]
+    public Guid UserId { get; set; }
+
+    [ForeignKey(nameof(UserId))]
+    public User? User { get; set; }
     public string Description { get; set; } = "New Transaction";
     public string Category { get; set; } = "General";
     [Required]

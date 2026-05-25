@@ -57,14 +57,14 @@ public class AppDbContext : DbContext
         );
 
         modelBuilder.Entity<Account>().HasData(
-            new Account { Id = aliceAccountId, UserId = aliceUserId, Balance = 1000.00m, Currency = "EUR" },
-            new Account { Id = bobAccountId, UserId = bobUserId, Balance = 500.00m, Currency = "EUR" }
+            new Account { Id = aliceAccountId, Name = "Alice Account", IsActive = true, UserId = aliceUserId, Balance = 1000.00m, Currency = "EUR" },
+            new Account { Id = bobAccountId, Name = "Bob Account", IsActive = true, UserId = bobUserId, Balance = 500.00m, Currency = "EUR" }
         );
 
         modelBuilder.Entity<Transaction>().HasData(
-            new Transaction { Id = aliceTransferBobTransactionId, Type = TransactionType.Transfer, SourceAccountId = aliceAccountId, DestinationAccountId = bobAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
-            , new Transaction { Id = aliceDepositTransactionId, Type = TransactionType.Deposit, DestinationAccountId = aliceAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
-            , new Transaction { Id = aliceWithdrawalTransactionId, Type = TransactionType.Withdrawal, SourceAccountId = aliceAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
+            new Transaction { Id = aliceTransferBobTransactionId, Category = "Dining", Description = "Transfer to Bob", UserId = aliceUserId, Type = TransactionType.Transfer, SourceAccountId = aliceAccountId, DestinationAccountId = bobAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
+            , new Transaction { Id = aliceDepositTransactionId, Category = "Mortgage", Description = "Deposit to Alice", UserId = aliceUserId, Type = TransactionType.Deposit, DestinationAccountId = aliceAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
+            , new Transaction { Id = aliceWithdrawalTransactionId, Category = "Gym", Description = "Withdrawal from Alice", UserId = aliceUserId, Type = TransactionType.Withdrawal, SourceAccountId = aliceAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
         );
 
         #endregion
