@@ -1,31 +1,29 @@
 using Fintech.Api.Services;
 
-namespace Fintech.Api.Workers
+namespace Fintech.Api.Workers;
+public class TokenCleanupWorker : BackgroundService
 {
-    public class TokenCleanupWorker : BackgroundService
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly TimeSpan _interval = TimeSpan.FromHours(1);
+
+    public TokenCleanupWorker(IServiceScopeFactory scopeFactory)
     {
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _interval = TimeSpan.FromHours(1);
+        _scopeFactory = scopeFactory;
+    }
 
-        public TokenCleanupWorker(IServiceScopeFactory scopeFactory)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _scopeFactory = scopeFactory;
+            await CleanUpTokenAsync();
+            await Task.Delay(_interval, stoppingToken);
         }
+    }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await CleanUpTokenAsync();
-                await Task.Delay(_interval, stoppingToken);
-            }
-        }
-
-        private async Task CleanUpTokenAsync()
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
-            await tokenService.CleanUpTokenAsync();
-        }
+    private async Task CleanUpTokenAsync()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+        await tokenService.CleanUpTokenAsync();
     }
 }

@@ -1,24 +1,22 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Fintech.Api.Models
+namespace Fintech.Api.Models;
+public class IdempotencyKey
 {
-    public class IdempotencyKey
-    {
-        [Key]
-        [MaxLength(450)]
-        public string ResourceKey { get; set; } = string.Empty;
+    [Key]
+    [MaxLength(450)]
+    public string ResourceKey { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(250)]
-        public string RequestPath { get; set; } = string.Empty;
+    [Required]
+    [MaxLength(250)]
+    public string RequestPath { get; set; } = string.Empty;
 
-        [Required]
-        public int ResponseStatusCode { get; set; }
+    [Required]
+    public int ResponseStatusCode { get; set; }
 
-        [Required]
-        public string ResponseBody { get; set; } = string.Empty;
+    [Required]
+    public string ResponseBody { get; set; } = string.Empty;
 
-        [Required]
-        public DateTime ExpiresAtUtc { get; set; }
-    }
+    [Required]
+    public DateTime ExpiresAtUtc { get; set; }
 }

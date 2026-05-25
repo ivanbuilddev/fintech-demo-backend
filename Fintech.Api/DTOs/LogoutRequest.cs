@@ -1,8 +1,7 @@
-namespace Fintech.Api.DTOs
+namespace Fintech.Api.DTOs;
+
+public class LogoutRequest
 {
-    public class LogoutRequest
-    {
-        public string Token { get; set; } = string.Empty;
-        public DateTime ExpireDate { get; set; } = DateTime.Now;
-    }
+    public string Token { get; set; } = string.Empty;
+    public DateTime ExpireDate { get; set; } = DateTime.Now;
 }

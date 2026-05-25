@@ -1,10 +1,8 @@
-namespace Fintech.Api.DTOs
+namespace Fintech.Api.DTOs;
+public class UpdateAccountRequest
 {
-    public class UpdateAccountRequest
-    {
-        public string? Name { get; set; }
-        public bool? IsActive { get; set; }
-        public decimal? Balance { get; set; }
+    public string? Name { get; set; }
+    public bool? IsActive { get; set; }
+    public decimal? Balance { get; set; }
 
-    }
 }

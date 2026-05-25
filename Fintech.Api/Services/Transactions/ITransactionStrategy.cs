@@ -1,11 +1,9 @@
 using Fintech.Api.DTOs;
 using Fintech.Api.Models;
 
-namespace Fintech.Api.Services.Transactions
+namespace Fintech.Api.Services.Transactions;
+public interface ITransactionStrategy
 {
-    public interface ITransactionStrategy
-    {
-        public TransactionType Type { get; }
-        public Task<Transaction?> CreateTransactionAsync(CreateTransationRequest transaction);
-    }
+    public TransactionType Type { get; }
+    public Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction);
 }

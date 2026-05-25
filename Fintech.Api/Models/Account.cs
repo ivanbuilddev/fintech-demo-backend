@@ -1,33 +1,31 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Fintech.Api.Models
+namespace Fintech.Api.Models;
+public class Account
 {
-    public class Account
-    {
-        [Key]
-        public Guid Id { get; set; }
+    [Key]
+    public Guid Id { get; set; }
 
-        [Required, MaxLength(100)]
-        public string Name { get; set; } = "New Account";
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = "New Account";
 
-        public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = true;
 
-        [Required]
-        public Guid UserId { get; set; }
+    [Required]
+    public Guid UserId { get; set; }
 
-        [ForeignKey(nameof(UserId))]
-        public User? User { get; set; }
+    [ForeignKey(nameof(UserId))]
+    public User? User { get; set; }
 
-        [Required]
-        [Column(TypeName = "decimal(18, 4)")]
-        public decimal Balance { get; set; }
+    [Required]
+    [Column(TypeName = "decimal(18, 4)")]
+    public decimal Balance { get; set; }
 
-        [Required]
-        [MaxLength(3)]
-        public string Currency { get; set; } = "EUR";
+    [Required]
+    [MaxLength(3)]
+    public string Currency { get; set; } = "EUR";
 
-        [Timestamp]
-        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
-    }
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
