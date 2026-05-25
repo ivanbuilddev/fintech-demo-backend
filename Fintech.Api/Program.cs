@@ -11,6 +11,7 @@ using Fintech.Api.Services.Auth;
 using Fintech.Api.Middleware;
 using Fintech.Api.Workers;
 using Scalar.AspNetCore;
+using OllamaSharp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,15 @@ builder.Services.AddAuthentication(options =>{
         };
     });
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<IOllamaApiClient>(new OllamaApiClient("Http:localhost:11434"));
+    builder.Services.AddScoped<IOllamaService, OllamaService>();
+}
+else
+{
+    builder.Services.AddScoped<IOllamaService, OllamaStubService>();
+}
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton<HashSet<RevokedToken>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
