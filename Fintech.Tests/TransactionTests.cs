@@ -121,6 +121,7 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await TestHelper.Login(_client);
         var loginResponse2 = await TestHelper.Login(_client, "BobDemo");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKey1");
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
         
         var responseSourceAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.SourceAccountId}");
@@ -164,6 +165,7 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await TestHelper.Login(_client);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKey2");
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), DestinationAccountId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
 
@@ -176,6 +178,7 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await TestHelper.Login(_client);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKey3");
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Withdrawal };
         
         var responseAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.SourceAccountId}");
@@ -207,6 +210,7 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await TestHelper.Login(_client);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKey4");
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), DestinationAccountId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Withdrawal };
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
 
@@ -219,6 +223,7 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await TestHelper.Login(_client);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKey5");
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Deposit };
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
 
@@ -238,10 +243,37 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await TestHelper.Login(_client);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKey6");
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333331"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTransaction_ReturnsBadRequest_WhenIdempotencyKeyIsDuplicated()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        _client.DefaultRequestHeaders.Add("Idempotency-Key", "TestIdempotencyKeyDuplicated");
+        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333331"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
+        await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+
+        var reponse = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+        Assert.Equal(HttpStatusCode.NotFound, reponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTransaction_ReturnsBadRequest_WhenIdempotencyKeyIsEmpty()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333331"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
+        var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

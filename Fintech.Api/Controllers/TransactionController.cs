@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Fintech.Api.DTOs;
 using Fintech.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,12 +14,14 @@ public class TransactionController : CustomControllerBase
     private readonly ITransactionService _transactionService;
     private readonly IAccountService _accountService;
     private readonly ILogger<TransactionController> _logger;
+    private readonly IIdempotencyService _idempotencyService;
 
-    public TransactionController(ITransactionService transactionService, ILogger<TransactionController> logger, IAccountService accountService)
+    public TransactionController(ITransactionService transactionService, ILogger<TransactionController> logger, IAccountService accountService, IIdempotencyService idempotencyService)
     {
         _transactionService = transactionService;
         _logger = logger;
         _accountService = accountService;
+        _idempotencyService = idempotencyService;
     }
 
     [HttpGet("transaction/{id}")]
@@ -51,16 +54,26 @@ public class TransactionController : CustomControllerBase
     }
 
     [HttpPost("transactions")]
-    public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest transaction)
+    public async Task<IActionResult> CreateTransaction([FromHeader(Name = "Idempotency-Key")] string? idempotencyKey, [FromBody] CreateTransactionRequest transaction)
     {
         _logger.LogInformation("Transaction requested to be created.");
+
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+            return BadRequest("Idempotency-Key header is required.");
+
+        var idempotencyResponseDuplicate = await _idempotencyService.IsDuplicateAsync(idempotencyKey, "POST api/transactions");
+        if(idempotencyResponseDuplicate != null) return StatusCode(idempotencyResponseDuplicate.StatusCode, idempotencyResponseDuplicate.ReponseBody);
+
         var transactionCreated = await _transactionService.CreateTransactionAsync(transaction, GetCurrentUserId());
         if(transactionCreated == null)
         {
             _logger.LogError("Transaction could not be created.");
+            await _idempotencyService.CreateAsync(idempotencyKey, "POST api/transactions", StatusCodes.Status404NotFound, "Transaction could not be created");
             return NotFound(new { message = "Transaction could not be created" });
         }
         _logger.LogInformation("Transaction created.");
+        var responseJson = JsonSerializer.Serialize(transactionCreated);
+        await _idempotencyService.CreateAsync(idempotencyKey, "POST api/transactions", StatusCodes.Status200OK, responseJson);
         return Ok(transactionCreated);
     }
 }

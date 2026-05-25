@@ -91,6 +91,7 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITransactionStrategy, TransferStrategy>();
 builder.Services.AddScoped<ITransactionStrategy, WithdrawalStrategy>();
 builder.Services.AddScoped<ITransactionStrategy, DepositStrategy>();
+builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
 
 builder.Services.AddControllers();
 
