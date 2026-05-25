@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Fintech.Api.Middleware;
 public class ExceptionHandlingMiddleware
 {
@@ -18,13 +20,22 @@ public class ExceptionHandlingMiddleware
         }
         catch (UnauthorizedAccessException ex)
         {
+            _logger.LogError("Unauthorized access exception occurred.");
             context.Response.StatusCode = 403;
             await context.Response.WriteAsJsonAsync(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogError("Key not found exception occurred.");
             context.Response.StatusCode = 404;
             await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _logger.LogError("Concurrency exception occurred.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { message = "The resource was modified by another request, please retry." });
         }
         catch (Exception ex)
         {
