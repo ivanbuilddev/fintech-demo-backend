@@ -75,7 +75,7 @@ builder.Services.AddAuthentication(options =>{
 
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddSingleton<IOllamaApiClient>(new OllamaApiClient("Http:localhost:11434"));
+    builder.Services.AddSingleton<IOllamaApiClient>(new OllamaApiClient("http://localhost:11434"));
     builder.Services.AddScoped<IOllamaService, OllamaService>();
 }
 else

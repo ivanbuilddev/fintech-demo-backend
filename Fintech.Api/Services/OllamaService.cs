@@ -10,6 +10,7 @@ public class OllamaService : IOllamaService
     public OllamaService(IOllamaApiClient ollama)
     {
         _ollama = ollama;
+        _ollama.SelectedModel = "qwen2.5-coder:3b";
     }
 
     public async Task<string> ChatAsync(string prompt)
