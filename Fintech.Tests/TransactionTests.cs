@@ -55,6 +55,18 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetTransactionById_ReturnsForbid_WhenTokenIsNotTheOwner()
+    {
+        var loginResponse = await TestHelper.Login(_client, "BobDemo");
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var transactionId = Guid.Parse("B6666666-6666-6666-6666-666666666666");
+        var response = await _client.GetAsync($"/api/Transaction/transaction/{transactionId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetTransactionsByAccountId_ReturnsTransactions_WhenTokenIsValidAndWhenIdIsValid()
     {
         var loginResponse = await TestHelper.Login(_client);
@@ -92,12 +104,37 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task CreateTransaction_ReturnsTransaction_WhenTokenIsValidAndWhenRequestIsValidAndTypeIsTransfer()
+    public async Task GetTransactionsByAccountId_ReturnsForbid_WhenTokenIsNotTheOwner()
     {
         var loginResponse = await TestHelper.Login(_client);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
-        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
+        var accountId = Guid.Parse("B4444444-4444-4444-4444-444444444444");
+        var response = await _client.GetAsync($"/api/Transaction/transactions/{accountId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTransaction_ReturnsTransaction_WhenTokenIsValidAndWhenRequestIsValidAndTypeIsTransfer()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+        var loginResponse2 = await TestHelper.Login(_client, "BobDemo");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
+        
+        var responseSourceAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.SourceAccountId}");
+        var sourceAccount = await responseSourceAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.NotNull(sourceAccount);
+        var sourceInitialBalance = sourceAccount.Balance;
+        
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse2.Token);
+        var responseDestinationAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.DestinationAccountId}");
+        var destinationAccount = await responseDestinationAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.NotNull(destinationAccount);
+        var destinationInitialBalance = destinationAccount.Balance;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -108,6 +145,29 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(createTransactionRequest.Description, transaction.Description);
         Assert.Equal(createTransactionRequest.Amount, transaction.Amount);
         Assert.Equal(createTransactionRequest.Type, transaction.Type);
+
+        var afterResponseSourceAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.SourceAccountId}");
+        sourceAccount = await afterResponseSourceAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.NotNull(sourceAccount);
+        Assert.Equal(sourceInitialBalance - createTransactionRequest.Amount, sourceAccount.Balance);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse2.Token);
+        var afterResponseDestinationAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.DestinationAccountId}");
+        destinationAccount = await afterResponseDestinationAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.NotNull(destinationAccount);
+        Assert.Equal(destinationInitialBalance + createTransactionRequest.Amount, destinationAccount.Balance);
+    }
+
+    [Fact]
+    public async Task CreateTransaction_ReturnsForbid_WhenSourceAccountIsNotTheOwnerAndTypeIsTransfer()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), DestinationAccountId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Transfer };
+        var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -117,7 +177,14 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
         var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333333"), DestinationAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Withdrawal };
+        
+        var responseAccount = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.SourceAccountId}");
+        var account = await responseAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.NotNull(account);
+        var initialBalance = account.Balance;
+
         var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var transaction = await response.Content.ReadFromJsonAsync<Transaction>();
@@ -127,6 +194,23 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(createTransactionRequest.Description, transaction.Description);
         Assert.Equal(createTransactionRequest.Amount, transaction.Amount);
         Assert.Equal(createTransactionRequest.Type, transaction.Type);
+
+        var afterAccountResponse = await _client.GetAsync($"/api/Account/account/{createTransactionRequest.SourceAccountId}");
+        account = await afterAccountResponse.Content.ReadFromJsonAsync<Account>();
+        Assert.NotNull(account);
+        Assert.Equal(initialBalance - createTransactionRequest.Amount, account.Balance);
+    }
+
+    [Fact]
+    public async Task CreateTransaction_ReturnsForbid_WhenSourceAccountIsNotTheOwnerAndTypeIsWithdrawal()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var createTransactionRequest = new CreateTransactionRequest { SourceAccountId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), DestinationAccountId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), Description = "Test Transaction", Amount = 100.00m, Type = TransactionType.Withdrawal };
+        var response = await _client.PostAsync($"/api/Transaction/transactions", JsonContent.Create(createTransactionRequest));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

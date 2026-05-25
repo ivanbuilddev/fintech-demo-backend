@@ -15,9 +15,16 @@ public class DepositStrategy : ITransactionStrategy
         _dbContext = dbContext;
         _logger = logger;
     }
-    public async Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction)
+    public async Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction, Guid currentUserId)
     {
         _logger.LogInformation("Deposit transaction requested.");
+
+        if(transaction.Amount < 0)
+        {
+            _logger.LogError("Transfer transaction failed. Transaction amount cannot be negative.");
+            return null;
+        }
+
         Guid? accountId = transaction.DestinationAccountId;
         if(accountId == null) return null;
 
@@ -31,6 +38,7 @@ public class DepositStrategy : ITransactionStrategy
         
         var newTransaction = new Transaction
         {
+            UserId = currentUserId,
             DestinationAccountId = accountId.Value,
             Amount = transaction.Amount,
             Description = transaction.Description,

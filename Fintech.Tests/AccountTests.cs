@@ -65,6 +65,18 @@ public class AccountTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetAccountById_ReturnsForbid_WhenTokenIsNotTheOwner()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var accountId = Guid.Parse("B4444444-4444-4444-4444-444444444444");
+        var response = await _client.GetAsync($"/api/Account/account/{accountId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAccountsByUserId_ReturnsAccounts_WhenTokenIsValidAndWhenIdIsValid()
     {
         var loginResponse = await TestHelper.Login(_client);
@@ -110,6 +122,18 @@ public class AccountTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.GetAsync($"/api/Account/accounts/{userId}");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAccountsByUserId_ReturnsForbid_WhenTokenIsNotTheOwner()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var userId = Guid.Parse("B2222222-2222-2222-2222-222222222222");
+        var response = await _client.GetAsync($"/api/Account/accounts/{userId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -164,5 +188,18 @@ public class AccountTests : IClassFixture<CustomWebApplicationFactory>
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "InvalidToken");
         var response = await _client.PutAsync($"/api/Account/accounts/{accountId}", JsonContent.Create(updateAccountRequest));
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateAccount_ReturnsForbid_WhenTokenIsNotTheOwner()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var accountId = Guid.Parse("B4444444-4444-4444-4444-444444444444");
+        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = false };
+        var response = await _client.PutAsync($"/api/Account/accounts/{accountId}", JsonContent.Create(updateAccountRequest));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

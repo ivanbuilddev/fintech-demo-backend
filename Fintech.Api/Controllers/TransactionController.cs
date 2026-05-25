@@ -25,7 +25,7 @@ public class TransactionController : CustomControllerBase
     public async Task<IActionResult> GetTransactionById(Guid id)
     {
         _logger.LogInformation("Transaction with id {id} requested.", id);
-        var transaction = await _transactionService.GetTransactionByIdAsync(id);
+        var transaction = await _transactionService.GetTransactionByIdAsync(id, GetCurrentUserId());
         if(transaction == null)
         {
             _logger.LogError("Transaction with id {id} not found.", id);
@@ -39,13 +39,13 @@ public class TransactionController : CustomControllerBase
     public async Task<IActionResult> GetTransactionsByAccountId(Guid id)
     {
         _logger.LogInformation("Transactions requested for account {id}.", id);
-        var account = await _accountService.GetAccountByIdAsync(id);
+        var account = await _accountService.GetAccountByIdAsync(id, GetCurrentUserId());
         if(account == null)
         {
             _logger.LogError("Account with id {id} not found.", id);
             return NotFound(new { message = "Account not found" });
         }
-        var transaction = await _transactionService.GetTransactionsByAccountIdAsync(id);
+        var transaction = await _transactionService.GetTransactionsByAccountIdAsync(id, GetCurrentUserId());
         _logger.LogInformation("Transactions found for account {id}.", id);
         return Ok(transaction);
     }
@@ -54,7 +54,7 @@ public class TransactionController : CustomControllerBase
     public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest transaction)
     {
         _logger.LogInformation("Transaction requested to be created.");
-        var transactionCreated = await _transactionService.CreateTransactionAsync(transaction);
+        var transactionCreated = await _transactionService.CreateTransactionAsync(transaction, GetCurrentUserId());
         if(transactionCreated == null)
         {
             _logger.LogError("Transaction could not be created.");

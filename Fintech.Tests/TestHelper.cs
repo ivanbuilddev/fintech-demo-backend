@@ -7,9 +7,9 @@ namespace Fintech.Tests;
 
 public static class TestHelper
 {
-    public static async Task<LoginResponse> Login(HttpClient client)
+    public static async Task<LoginResponse> Login(HttpClient client, string username = "AliceDemo")
     {
-        var body = new { username = "AliceDemo" };
+        var body = new { username = username };
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
         var response = await client.PostAsync("/api/Auth/login", content);

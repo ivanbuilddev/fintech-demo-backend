@@ -15,9 +15,16 @@ public class TransferStrategy : ITransactionStrategy
         _logger = logger;
         _dbContext = dbContext;
     }
-    public async Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction)
+    public async Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction, Guid currentUserId)
     {
         _logger.LogInformation("Transfer transaction requested.");
+
+        if(transaction.Amount < 0)
+        {
+            _logger.LogError("Transfer transaction failed. Transaction amount cannot be negative.");
+            return null;
+        }
+
         Guid? accountId = transaction.SourceAccountId;
         if(accountId == null) return null;
         
@@ -29,10 +36,10 @@ public class TransferStrategy : ITransactionStrategy
             return null;
         }
 
-        var account = await _accountService.GetAccountByIdAsync(accountId.Value);
+        var account = await _accountService.GetAccountByIdAsync(accountId.Value, currentUserId);
         if(account == null)
         {
-            _logger.LogError("Transfer transaction failed. Account not found.");
+            _logger.LogError("Transfer transaction failed. Source account not found.");
             return null;
         }
 
@@ -43,15 +50,27 @@ public class TransferStrategy : ITransactionStrategy
         }
 
         account!.Balance -= transaction.Amount;
+        destinationAccount!.Balance += transaction.Amount;
+
+        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
+        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
+        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
+        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
+        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
+        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
 
         var newTransaction = new Transaction
         {
+            UserId = currentUserId,
             SourceAccountId = accountId.Value,
             DestinationAccountId = destinationAccountId.Value,
             Amount = transaction.Amount,
             Description = transaction.Description,
             Type = transaction.Type
         };
+
+        _logger.LogInformation("Source account with Id {id} current balance: {balance}", accountId, account!.Balance);
+        _logger.LogInformation("Destination account with Id {id} current balance: {balance}", destinationAccountId, destinationAccount!.Balance);
 
         _dbContext.Transactions.Add(newTransaction);
         await _dbContext.SaveChangesAsync();

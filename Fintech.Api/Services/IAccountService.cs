@@ -4,8 +4,9 @@ using Fintech.Api.Models;
 namespace Fintech.Api.Services;
 public interface IAccountService
 {
+    public Task<Account?> GetAccountByIdAsync(Guid id, Guid currentUserId);
     public Task<Account?> GetAccountByIdAsync(Guid id);
-    public Task<IEnumerable<Account>> GetAccountsAsync(Guid userId);
+    public Task<IEnumerable<Account>> GetAccountsAsync(Guid userId, Guid currentUserId);
     public Task<Account> CreateAccountAsync(Guid userId, CreateAccountRequest request);
-    public Task<Account?> UpdateAccountAsync(Guid id, UpdateAccountRequest request);
+    public Task<Account?> UpdateAccountAsync(Guid id, UpdateAccountRequest request, Guid currentUserId);
 }

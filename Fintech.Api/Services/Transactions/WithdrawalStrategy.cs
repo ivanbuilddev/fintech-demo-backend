@@ -15,13 +15,20 @@ public class WithdrawalStrategy : ITransactionStrategy
         _logger = logger;
         _dbContext = dbContext;
     }
-    public async Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction)
+    public async Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction, Guid currentUserId)
     {
         _logger.LogInformation("Withdrawal transaction requested.");
+    
+        if(transaction.Amount < 0)
+        {
+            _logger.LogError("Transfer transaction failed. Transaction amount cannot be negative.");
+            return null;
+        }
+
         Guid? accountId = transaction.SourceAccountId;
         if(accountId == null) return null;
 
-        var account = await _accountService.GetAccountByIdAsync(accountId.Value);
+        var account = await _accountService.GetAccountByIdAsync(accountId.Value, currentUserId);
         if(account == null)
         {
             _logger.LogError("Withdrawal transaction failed. Account not found.");
@@ -37,6 +44,7 @@ public class WithdrawalStrategy : ITransactionStrategy
 
         var newTransaction = new Transaction
         {
+            UserId = currentUserId,
             SourceAccountId = accountId.Value,
             Amount = transaction.Amount,
             Description = transaction.Description,

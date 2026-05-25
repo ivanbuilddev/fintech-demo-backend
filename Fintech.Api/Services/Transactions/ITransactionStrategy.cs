@@ -5,5 +5,5 @@ namespace Fintech.Api.Services.Transactions;
 public interface ITransactionStrategy
 {
     public TransactionType Type { get; }
-    public Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction);
+    public Task<Transaction?> CreateTransactionAsync(CreateTransactionRequest transaction, Guid currentUserId);
 }
