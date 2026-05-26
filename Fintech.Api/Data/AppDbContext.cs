@@ -46,6 +46,8 @@ public class AppDbContext : DbContext
         var aliceAccountId = Guid.Parse("a3333333-3333-3333-3333-333333333333");
         var bobAccountId = Guid.Parse("b4444444-4444-4444-4444-444444444444");
 
+        var aliceInitialDepositTransactionId = Guid.Parse("c1111111-1111-1111-1111-111111111111");
+        var bobInitialDepositTransactionId = Guid.Parse("c2222222-2222-2222-2222-222222222222");
         var aliceTransferBobTransactionId = Guid.Parse("a5555555-5555-5555-5555-555555555555");
         var aliceDepositTransactionId = Guid.Parse("b6666666-6666-6666-6666-666666666666");
         var aliceWithdrawalTransactionId = Guid.Parse("b7777777-7777-7777-7777-777777777777");
@@ -65,6 +67,8 @@ public class AppDbContext : DbContext
             new Transaction { Id = aliceTransferBobTransactionId, Category = "Dining", Description = "Transfer to Bob", UserId = aliceUserId, Type = TransactionType.Transfer, SourceAccountId = aliceAccountId, DestinationAccountId = bobAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
             , new Transaction { Id = aliceDepositTransactionId, Category = "Mortgage", Description = "Deposit to Alice", UserId = aliceUserId, Type = TransactionType.Deposit, DestinationAccountId = aliceAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
             , new Transaction { Id = aliceWithdrawalTransactionId, Category = "Gym", Description = "Withdrawal from Alice", UserId = aliceUserId, Type = TransactionType.Withdrawal, SourceAccountId = aliceAccountId, Amount = 100.00m, CreatedAtUtc = DateTime.UnixEpoch }
+            , new Transaction { Id = aliceInitialDepositTransactionId, Category = "Bank", Description = "Initial Deposit to Alice", UserId = aliceUserId, Type = TransactionType.Deposit, DestinationAccountId = aliceAccountId, Amount = 1100.00m, CreatedAtUtc = DateTime.UnixEpoch }
+            , new Transaction { Id = bobInitialDepositTransactionId, Category = "Bank", Description = "Initial Deposit to Bob", UserId = bobUserId, Type = TransactionType.Deposit, DestinationAccountId = bobAccountId, Amount = 400.00m, CreatedAtUtc = DateTime.UnixEpoch }
         );
 
         #endregion

@@ -20,12 +20,12 @@ public class DatabaseCapWorker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                
 
                 _logger.LogInformation("Database cap worker ran successfully.");
             }

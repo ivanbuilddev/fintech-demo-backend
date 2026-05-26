@@ -43,22 +43,21 @@ public class TransferStrategy : ITransactionStrategy
             return null;
         }
 
+        if(destinationAccount!.IsActive == false || account!.IsActive == false)
+        {
+            _logger.LogError("Transfer transaction failed. Account is not active.");
+            return null;
+        }
+        
         if(account!.Balance < transaction.Amount) 
         {
             _logger.LogError("Transfer transaction failed. Account balance is not enough.");
             return null;
         }
 
+
         account!.Balance -= transaction.Amount;
         destinationAccount!.Balance += transaction.Amount;
-
-        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
-        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
-        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
-        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
-        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
-        _logger.LogInformation("----------------------------------------------------IM EXECUTING A TRANSFER TRANSACTION----------------------------------------------------");
-
         var newTransaction = new Transaction
         {
             UserId = currentUserId,

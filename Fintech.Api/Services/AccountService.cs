@@ -102,4 +102,81 @@ public class AccountService : IAccountService
         _logger.LogInformation("Account {id} updated.", id);
         return accountToUpdate;
     }
+
+    public async Task<bool> DeleteAccountAsync(Guid id, Guid currentUserId)
+    {
+        _logger.LogInformation("Account {id} requested to be deleted.", id);
+        var accountToDelete = await GetAccountByIdAsync(id, currentUserId);
+        if(accountToDelete == null)
+        {
+            _logger.LogError("Account {id} not found.", id);
+            return false;
+        }
+
+        if(accountToDelete.UserId != currentUserId)
+        {
+            _logger.LogError("User {currentUserId} is not the owner of account {id}.", currentUserId, accountToDelete.Id);
+            throw new UnauthorizedAccessException("User is not the owner of the account.");
+        }
+
+        return await DeleteAccountHelperAsync(id, accountToDelete);
+    }
+
+    public async Task<bool> ForceDeleteAccountAsync(Guid id)
+    {
+        _logger.LogInformation("Account {id} requested to be deleted.", id);
+        var accountToDelete = await GetAccountByIdAsync(id);
+        if(accountToDelete == null)
+        {
+            _logger.LogError("Account {id} not found.", id);
+            return false;
+        }
+
+        return await DeleteAccountHelperAsync(id, accountToDelete);
+    }
+
+    public async Task<bool> DeleteAccountHelperAsync(Guid id, Account accountToDelete)
+    {
+        var transactionsToDelete = await _dbContext.Transactions.Where(t => t.SourceAccountId == id || t.DestinationAccountId == id).ToListAsync();
+        
+        var affectedAccountIds = transactionsToDelete
+            .SelectMany(t => new[] { t.SourceAccountId, t.DestinationAccountId })
+            .Where(accountId => accountId.HasValue && accountId != id)
+            .Select(accountId => accountId!.Value)
+            .Distinct()
+            .ToList();
+
+        _dbContext.Transactions.RemoveRange(transactionsToDelete);
+        _dbContext.Accounts.Remove(accountToDelete);
+        await _dbContext.SaveChangesAsync();
+
+        foreach (var accountId in affectedAccountIds)
+            await RecalculateAccountBalanceAsync(accountId);   
+
+        _logger.LogInformation("Account {id} deleted.", id);
+
+        return true;
+    }
+
+    public async Task<Account?> RecalculateAccountBalanceAsync(Guid id)
+    {
+        _logger.LogInformation("Account {id} requested to be recalculated.", id);
+        var accountToRecalculate = await GetAccountByIdAsync(id);
+        if(accountToRecalculate == null)
+        {
+            _logger.LogError("Account {id} not found.", id);
+            return null;
+        }
+
+        var deposits = await _dbContext.Transactions.Where(t => t.DestinationAccountId == id && t.Type == TransactionType.Deposit).SumAsync(t => t.Amount);
+        var withdrawals = await _dbContext.Transactions.Where(t => t.SourceAccountId == id && t.Type == TransactionType.Withdrawal).SumAsync(t => t.Amount);
+        var transfersIn = await _dbContext.Transactions.Where(t => t.SourceAccountId == id && t.Type == TransactionType.Transfer).SumAsync(t => t.Amount);
+        var transfersOut = await _dbContext.Transactions.Where(t => t.DestinationAccountId == id && t.Type == TransactionType.Transfer).SumAsync(t => t.Amount);
+
+        var balance = deposits + transfersIn - withdrawals - transfersOut;
+        accountToRecalculate.Balance = balance;
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("Account {id} recalculated.", id);
+        return accountToRecalculate;
+    }
 }

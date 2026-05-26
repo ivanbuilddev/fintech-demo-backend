@@ -76,4 +76,23 @@ public class AccountController : CustomControllerBase
         }
         return Ok(accountUpdated);
     }
+
+    [HttpDelete("accounts/{id}")]
+    public async Task<IActionResult> DeleteAccount(Guid id)
+    {
+        _logger.LogInformation("Account with id {id} requested to be deleted.", id);
+        var user = await _userService.GetUserByIdAsync(GetCurrentUserId());
+        if(user == null) return NotFound(new { message = "User not found" });
+
+        var accountOwnerId = await _accountService.GetAccountByIdAsync(id, GetCurrentUserId());
+        if(accountOwnerId == null) return NotFound(new { message = "Account not found" });
+
+        var accountDeleted = await _accountService.DeleteAccountAsync(id, GetCurrentUserId());
+        if(!accountDeleted)
+        {
+            return NotFound(new { message = "Account not found" });
+        }
+
+        return Ok(("Account {id} deleted", id));
+    }
 }

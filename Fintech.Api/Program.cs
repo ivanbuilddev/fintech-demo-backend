@@ -119,6 +119,7 @@ builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
 builder.Services.AddControllers();
 
 builder.Services.AddHostedService<TokenCleanupWorker>();
+builder.Services.AddHostedService<DatabaseCapWorker>();
 
 var app = builder.Build();
 

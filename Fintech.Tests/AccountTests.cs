@@ -8,7 +8,8 @@ using Fintech.Api.Models;
 
 namespace Fintech.Tests;
 
-public class AccountTests : IClassFixture<CustomWebApplicationFactory>
+[Collection("AccountCollection")]
+public class AccountTests
 {
     private readonly HttpClient _client;
 
@@ -170,7 +171,7 @@ public class AccountTests : IClassFixture<CustomWebApplicationFactory>
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
         var accountId = Guid.Parse("a3333333-3333-3333-3333-333333333333");
-        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = false };
+        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = true };
         var response = await _client.PutAsync($"/api/Account/accounts/{accountId}", JsonContent.Create(updateAccountRequest));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -184,7 +185,7 @@ public class AccountTests : IClassFixture<CustomWebApplicationFactory>
     public async Task UpdateAccount_ReturnsUnauthorized_WhenTokenIsInvalid()
     {
         var accountId = Guid.Parse("a3333333-3333-3333-3333-333333333333");
-        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = false };
+        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = true };
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "InvalidToken");
         var response = await _client.PutAsync($"/api/Account/accounts/{accountId}", JsonContent.Create(updateAccountRequest));
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -197,9 +198,32 @@ public class AccountTests : IClassFixture<CustomWebApplicationFactory>
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
         var accountId = Guid.Parse("B4444444-4444-4444-4444-444444444444");
-        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = false };
+        var updateAccountRequest = new UpdateAccountRequest { Name = "Test Account Updated", IsActive = true };
         var response = await _client.PutAsync($"/api/Account/accounts/{accountId}", JsonContent.Create(updateAccountRequest));
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteAccount_ReturnsAccount_WhenTokenIsValidAndWhenIdIsValid()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+        var loginResponse2 = await TestHelper.Login(_client, "BobDemo");
+
+        var accountToDeleteId = Guid.Parse("a3333333-3333-3333-3333-333333333333");
+        var accountId = Guid.Parse("B4444444-4444-4444-4444-444444444444");
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var response = await _client.DeleteAsync($"/api/Account/accounts/{accountToDeleteId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var responseAccountAfter = await _client.GetAsync($"/api/Account/account/{accountToDeleteId}");
+        Assert.Equal(HttpStatusCode.NotFound, responseAccountAfter.StatusCode);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse2.Token);
+        var responseAccount = await _client.GetAsync($"/api/Account/account/{accountId}");
+        var account = await responseAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.Equal(HttpStatusCode.OK, responseAccount.StatusCode);
+        Assert.Equal(400.00m, account!.Balance);
     }
 }

@@ -34,6 +34,13 @@ public class DepositStrategy : ITransactionStrategy
             _logger.LogError("Deposit transaction failed. Account not found.");
             return null;
         }
+
+        if(account.IsActive == false)
+        {
+            _logger.LogError("Deposit transaction failed. Account is not active.");
+            return null;
+        }
+
         account!.Balance += transaction.Amount;
         
         var newTransaction = new Transaction

@@ -10,7 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Fintech.Tests;
 
-public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
+[Collection("AccountCollection")]
+public class TransactionTests
 {
     private readonly HttpClient _client;
     private readonly CustomWebApplicationFactory _factory;
@@ -316,4 +317,40 @@ public class TransactionTests : IClassFixture<CustomWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
+
+    [Fact]
+    public async Task DeleteTransaction_ReturnsTransaction_WhenTokenIsValidAndWhenIdIsValid()
+    {
+        var loginResponse = await TestHelper.Login(_client);
+        var loginResponse2 = await TestHelper.Login(_client, "BobDemo");
+
+        var accountId = Guid.Parse("B4444444-4444-4444-4444-444444444444");
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse2.Token);
+        var responseAccount = await _client.GetAsync($"/api/Account/account/{accountId}");
+        var account = await responseAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.Equal(HttpStatusCode.OK, responseAccount.StatusCode);
+        var initialBalance = account!.Balance;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+        var transactionId = Guid.Parse("a5555555-5555-5555-5555-555555555555");
+        var transactionBefore = await _client.GetAsync($"/api/Transaction/transaction/{transactionId}");
+        var transactionDataBefore = await transactionBefore.Content.ReadFromJsonAsync<Transaction>();
+        var amountBefore = transactionDataBefore!.Amount;
+        Assert.Equal(HttpStatusCode.OK, transactionBefore.StatusCode);
+
+        var response = await _client.DeleteAsync($"/api/Transaction/transactions/{transactionId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var responseTransaction = await _client.GetAsync($"/api/Transaction/transaction/{transactionId}");
+        Assert.Equal(HttpStatusCode.NotFound, responseTransaction.StatusCode);
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse2.Token);
+        responseAccount = await _client.GetAsync($"/api/Account/account/{accountId}");
+        account = await responseAccount.Content.ReadFromJsonAsync<Account>();
+        Assert.Equal(HttpStatusCode.OK, responseAccount.StatusCode);
+        Assert.Equal(account!.Balance, initialBalance - amountBefore);
+    }
+
+    //TODO: Test Transfer/Deposit/Withdrawal using frozen accounts
 }

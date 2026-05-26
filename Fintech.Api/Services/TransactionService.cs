@@ -39,6 +39,20 @@ public class TransactionService : ITransactionService
         return transaction;
     }
 
+     public async Task<Transaction?> GetTransactionByIdAsync(Guid id)
+    {
+        _logger.LogInformation("Transaction {id} requested.", id);
+        var transaction = await _dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == id);
+        if(transaction == null)
+        {
+            _logger.LogError("Transaction {id} not found.", id);
+            return null;
+        }
+
+        _logger.LogInformation("Transaction {id} found.", id);
+        return transaction;
+    }
+
     public async Task<IEnumerable<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId, Guid currentUserId)
     {
         _logger.LogInformation("Transactions requested for account {accountId}.", accountId);
@@ -54,5 +68,55 @@ public class TransactionService : ITransactionService
             return null;
         }
         return await strategy.CreateTransactionAsync(transaction, currentUserId);
+    }
+
+    public async Task<bool> DeleteTransactionAsync(Guid id, Guid currentUserId)
+    {
+        _logger.LogInformation("Transaction {id} requested to be deleted.", id);
+        var transactionToDelete = await GetTransactionByIdAsync(id, currentUserId);
+        if(transactionToDelete == null)
+        {
+            _logger.LogError("Transaction {id} not found.", id);
+            return false;
+        }
+
+        if(transactionToDelete.UserId != currentUserId)
+        {
+            _logger.LogError("User {currentUserId} is not the owner of transaction {id}.", currentUserId, id);
+            throw new UnauthorizedAccessException("User is not the owner of the transaction.");
+        }
+
+        return await DeleteTransactionHelperAsync(id, transactionToDelete);
+    }
+
+    public async Task<bool> ForceDeleteTransactionAsync(Guid id)
+    {
+        _logger.LogInformation("Transaction {id} requested to be deleted.", id);
+        var transactionToDelete = await GetTransactionByIdAsync(id);
+        if(transactionToDelete == null)
+        {
+            _logger.LogError("Transaction {id} not found.", id);
+            return false;
+        }
+
+        return await DeleteTransactionHelperAsync(id, transactionToDelete);
+    }
+
+    public async Task<bool> DeleteTransactionHelperAsync(Guid id, Transaction transactionToDelete)
+    {
+        var affectedAccountIds = new[] { transactionToDelete.SourceAccountId, transactionToDelete.DestinationAccountId }
+            .Where(accountId => accountId.HasValue && accountId != id)
+            .Select(accountId => accountId!.Value)
+            .Distinct()
+            .ToList();
+
+        _dbContext.Transactions.Remove(transactionToDelete);
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("Transaction {id} deleted.", id);
+
+        foreach (var accountId in affectedAccountIds)
+            await _accountService.RecalculateAccountBalanceAsync(accountId);
+
+        return true;
     }
 }

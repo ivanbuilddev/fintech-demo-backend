@@ -34,6 +34,13 @@ public class WithdrawalStrategy : ITransactionStrategy
             _logger.LogError("Withdrawal transaction failed. Account not found.");
             return null;
         }
+
+        if(account.IsActive == false)
+        {
+            _logger.LogError("Withdrawal transaction failed. Account is not active.");
+            return null;
+        }
+
         if(account!.Balance < transaction.Amount) 
         {
             _logger.LogError("Withdrawal transaction failed. Account balance is not enough.");

@@ -76,4 +76,25 @@ public class TransactionController : CustomControllerBase
         await _idempotencyService.CreateAsync(idempotencyKey, "POST api/transactions", StatusCodes.Status200OK, responseJson);
         return Ok(transactionCreated);
     }
+
+    [HttpDelete("transactions/{id}")]
+    public async Task<IActionResult> DeleteTransaction(Guid id)
+    {
+        _logger.LogInformation("Transaction with id {id} requested to be deleted.", id);
+        var transaction = await _transactionService.GetTransactionByIdAsync(id, GetCurrentUserId());
+        if(transaction == null)
+        {
+            _logger.LogError("Transaction with id {id} not found.", id);
+            return NotFound(new { message = "Transaction not found" });
+        }
+
+        var transactionDeleted = await _transactionService.DeleteTransactionAsync(id, GetCurrentUserId());
+        if(!transactionDeleted)
+        {
+            _logger.LogError("Transaction with id {id} could not be deleted.", id);
+            return NotFound(new { message = "Transaction could not be deleted" });
+        }
+        _logger.LogInformation("Transaction with id {id} deleted.", id);
+        return Ok(("Transaction {id} deleted", id));
+    }
 }
