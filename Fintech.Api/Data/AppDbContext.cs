@@ -59,8 +59,8 @@ public class AppDbContext : DbContext
         );
 
         modelBuilder.Entity<Account>().HasData(
-            new Account { Id = aliceAccountId, Name = "Alice Account", IsActive = true, UserId = aliceUserId, Balance = 1000.00m, Currency = "EUR" },
-            new Account { Id = bobAccountId, Name = "Bob Account", IsActive = true, UserId = bobUserId, Balance = 500.00m, Currency = "EUR" }
+            new Account { Id = aliceAccountId, Name = "Alice Account", IsActive = true, UserId = aliceUserId, Balance = 1000.00m, Currency = "EUR", CreatedAtUtc = DateTime.UnixEpoch },
+            new Account { Id = bobAccountId, Name = "Bob Account", IsActive = true, UserId = bobUserId, Balance = 500.00m, Currency = "EUR", CreatedAtUtc = DateTime.UnixEpoch }
         );
 
         modelBuilder.Entity<Transaction>().HasData(

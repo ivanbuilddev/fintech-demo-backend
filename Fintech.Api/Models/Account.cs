@@ -26,6 +26,8 @@ public class Account
     [MaxLength(3)]
     public string Currency { get; set; } = "EUR";
 
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
     [Timestamp]
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
