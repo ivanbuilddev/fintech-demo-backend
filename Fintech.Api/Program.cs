@@ -12,6 +12,7 @@ using Fintech.Api.Middleware;
 using Fintech.Api.Workers;
 using Scalar.AspNetCore;
 using OllamaSharp;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,27 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(conn
 
 var jwtSettings = _configuration["JwtSettings:Secret"];
 var key = Encoding.UTF8.GetBytes(jwtSettings!);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = null;
+    options.AddServerHeader = false;
+});
+
+if(!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.AddFixedWindowLimiter("ApiLimiter", limiter =>
+        {
+            limiter.Window = TimeSpan.FromMinutes(20);
+            limiter.PermitLimit = 20;
+            limiter.QueueLimit = 0;
+        });
+
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    });
+}
 
 builder.Services.AddAuthentication(options =>{
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -82,6 +104,7 @@ else
 {
     builder.Services.AddScoped<IOllamaService, OllamaStubService>();
 }
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton<HashSet<RevokedToken>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -109,11 +132,19 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
+app.UseHsts();
+
+if(!builder.Environment.IsDevelopment())
+    app.UseRateLimiter();
 
 app.UseMiddleware<TokenBlacklistMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+if(!builder.Environment.IsDevelopment())
+    app.MapControllers().RequireRateLimiting("ApiLimiter");
+else
+    app.MapControllers();
 
 app.Run();
