@@ -1,0 +1,31 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fintech-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Password
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  api:
+    image: fintech-api:latest
+    container_name: fintech-api
+    build:
+      context: .
+      dockerfile: Fintech.Api/Dockerfile
+    ports:
+      - "5241:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db;Database=FintechDb;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True;
+      - Ollama__BaseUrl=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
+
+volumes:
+  mssql_data:

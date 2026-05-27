@@ -97,7 +97,8 @@ builder.Services.AddAuthentication(options =>{
 
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddSingleton<IOllamaApiClient>(new OllamaApiClient("http://localhost:11434"));
+    var ollamaUrl = _configuration["Ollama:BaseUrl"] ?? "http://localhost:11434";
+    builder.Services.AddSingleton<IOllamaApiClient>(new OllamaApiClient(ollamaUrl));
     builder.Services.AddScoped<IOllamaService, OllamaService>();
 }
 else
@@ -147,5 +148,42 @@ if(!builder.Environment.IsDevelopment())
     app.MapControllers().RequireRateLimiting("ApiLimiter");
 else
     app.MapControllers();
+
+// Apply pending migrations automatically on startup with retries (especially useful for Docker environments)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var db = services.GetRequiredService<AppDbContext>();
+
+    int retries = 10;
+    while (retries > 0)
+    {
+        try
+        {
+            if (!db.Database.IsRelational())
+            {
+                logger.LogInformation("Non-relational database provider detected. Skipping migrations.");
+                break;
+            }
+
+            logger.LogInformation("Applying pending database migrations...");
+            db.Database.Migrate();
+            logger.LogInformation("Database migrations applied successfully.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            retries--;
+            logger.LogWarning("Failed to apply database migrations. Retrying... {Retries} attempts left. Error: {Message}", retries, ex.Message);
+            if (retries == 0)
+            {
+                logger.LogError(ex, "Could not apply database migrations after multiple retries.");
+                throw;
+            }
+            Thread.Sleep(5000);
+        }
+    }
+}
 
 app.Run();

@@ -6,7 +6,7 @@ This repository showcases advanced development practices including **Strategy De
 
 ---
 
-## 🏗️ Architecture & Project Structure
+## Architecture & Project Structure
 
 The project follows a decoupled, layered architectural approach that separates HTTP delivery, domain logic, data persistence, and background maintenance.
 
@@ -39,7 +39,7 @@ The project follows a decoupled, layered architectural approach that separates H
 
 ---
 
-## 🗄️ Database Models & Schema
+## Database Models & Schema
 
 The data model is built code-first using Entity Framework Core. You can view the configurations in [AppDbContext.cs](Fintech.Api/Data/AppDbContext.cs).
 
@@ -83,7 +83,7 @@ Saves API responses associated with unique idempotency keys.
 
 ---
 
-## ⚡ Core Functionality
+## Core Functionality
 
 ### 1. Strategy-Driven Transaction Processing
 Rather than utilizing monolithic logic, transactions are routed via specific strategy classes:
@@ -114,7 +114,7 @@ Exposes an AI chat interface utilizing a locally-hosted LLM (`qwen2.5-coder:3b` 
 
 ---
 
-## 🔒 Security Architecture
+## Security Architecture
 
 The application implements a defense-in-depth security approach to protect financial data and avoid common web application vulnerabilities.
 
@@ -123,7 +123,7 @@ The application implements a defense-in-depth security approach to protect finan
   1. During the JWT validation event (`OnTokenValidated`) in the ASP.NET Core Authentication handler.
   2. Within a custom [TokenBlacklistMiddleware.cs](Fintech.Api/Middleware/TokenBlacklistMiddleware.cs) early in the request pipeline.
 * **Strict Ownership Authorization Checks**: All controllers utilize a `GetCurrentUserId()` helper to enforce that a user can only query, modify, or delete accounts and transactions that they own, preventing Horizontal Privilege Escalation (Insecure Direct Object Reference - IDOR).
-* **Rate Limiting**: In Production modes, a fixed-window rate limiter is activated for API controllers (`ApiLimiter`), restricting users to **20 requests per 20 minutes** to safeguard against brute-force authentication and denial-of-service (DoS) attempts.
+* **Rate Limiting**: In Production modes, a fixed-window rate limiter is activated for API controllers (`ApiLimiter`), restricting users to **20 requests per minute** to safeguard against brute-force authentication and denial-of-service (DoS) attempts.
 * **Optimistic Concurrency Control**: Entity Framework Core captures `DbUpdateConcurrencyException` when a database write conflict is detected (using the `RowVersion` timestamp). This conflict is caught by custom middleware and mapped to a `409 Conflict` HTTP response, instructing the client to retry.
 * **Kestrel Hardening & Security Headers**:
   - `options.AddServerHeader = false` strips the default `Server: Kestrel` header to limit framework disclosure.
@@ -133,7 +133,7 @@ The application implements a defense-in-depth security approach to protect finan
 
 ---
 
-## 🧪 Testing Suite & Strategy
+## Testing Suite & Strategy
 
 The project contains a comprehensive integration testing suite inside `Fintech.Tests`.
 
@@ -161,17 +161,47 @@ The project contains a comprehensive integration testing suite inside `Fintech.T
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
+
+### Running with Docker (Recommended)
+
+You can run the API along with the SQL Server database using **Docker** and **Docker Compose**. This requires no local installation of the .NET SDK or SQL Server.
+
+#### Prerequisites
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine installed.
+* **AI (Optional)**: [Ollama](https://ollama.com/) running on the host machine.
+
+#### Instructions
+
+1. (Optional) Pull the Ollama AI model on your host machine:
+   ```bash
+   ollama pull qwen2.5-coder:3b
+   ```
+2. Start the database and API services:
+   ```bash
+   docker compose up --build
+   ```
+3. The API container will build, wait for the SQL Server database container to boot, automatically apply Entity Framework database migrations, seed the demo records, and start listening on port `5241`.
+4. Access the API documentation via Scalar at: `http://localhost:5241/scalar/v1`.
+
+To stop the containers and cleanup resources:
+```bash
+docker compose down -v
+```
+
+---
+
+### Running Locally (Without Docker)
 
 ### Prerequisites
-* **SDK**: [.NET 9.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+* **SDK**: [.NET 9.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) (Note: The project was updated to Target .NET 10.0 in latest changes, so the SDK version or runtime should match).
 * **Database**: LocalDB or SQL Server Express
 * **AI (Optional)**: [Ollama](https://ollama.com/) with the model `qwen2.5-coder:3b` pulled:
   ```bash
   ollama pull qwen2.5-coder:3b
   ```
 
-### Run the API
+### Run the API (Locally)
 1. Restore dependencies:
    ```bash
    dotnet restore
